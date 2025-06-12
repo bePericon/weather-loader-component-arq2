@@ -11,89 +11,93 @@ import { WeatherDataDto } from '../dtos/weather-data-dto';
 import { WeatherDataUseCase } from '../interfaces/weather-data-use-case.interface';
 
 export class WeatherLoadingService implements WeatherDataUseCase {
-	private readonly createWeatherDataUseCase: CreateWeatherData;
-	private readonly fetchCurrentWeatherUseCase: FetchCurrentWeather;
+    private readonly createWeatherDataUseCase: CreateWeatherData;
+    private readonly fetchCurrentWeatherUseCase: FetchCurrentWeather;
 
+    constructor(
+        readonly weatherDataRepository: WeatherDataRepository,
+        readonly weatherDataClient: WeatherDataClient
+    ) {
+        this.createWeatherDataUseCase = new CreateWeatherData(weatherDataRepository);
+        this.fetchCurrentWeatherUseCase = new FetchCurrentWeather(weatherDataClient);
+    }
 
-	constructor(
-		readonly weatherDataRepository: WeatherDataRepository,
-		readonly weatherDataClient: WeatherDataClient
-	) {
-		this.createWeatherDataUseCase = new CreateWeatherData(weatherDataRepository);
-		this.fetchCurrentWeatherUseCase = new FetchCurrentWeather(weatherDataClient)
-	}
+    async loadWeatherDataForCity(city: string): Promise<WeatherDataDto | null> {
+        const fetched = await this.fetchCurrentWeatherUseCase.execute(city);
 
-	async loadWeatherDataForCities(cities: string[]): Promise<void> {
-		cities.forEach(async (city) => {
-			const response = await this.fetchCurrentWeatherUseCase.execute(city)
+        let weatherDataDto = null;
+        if (fetched) {
+            const createWeatherDataDto: CreateWeatherDataDto = {
+                coord: fetched.coord,
+                weather: fetched.weather[0],
+                main: fetched.main,
+                timezone: fetched.timezone,
+                id: fetched.id,
+                name: fetched.name,
+                cod: fetched.cod,
+            };
+            weatherDataDto = await this.createWeather(createWeatherDataDto);
+        }
 
-			if(response){
-				console.log("🚀 ~ WeatherLoadingService ~ cities.forEach ~ response:", response)
-				const createWeatherDataDto: CreateWeatherDataDto = {
-					coord: response.coord,
-					weather: response.weather[0],
-					main: response.main,
-					timezone: response.timezone,
-					id: response.id,
-					name: response.name,
-					cod: response.cod,
-				};
-				await this.createWeather(createWeatherDataDto);
-			}
-		});
-	}
+        return weatherDataDto;
+    }
 
-	async createWeather(
-		createWeatherDataDto: CreateWeatherDataDto
-	): Promise<WeatherDataDto> {
-		const coord = new Coord({
-			lat: createWeatherDataDto.coord.lat,
-			lon: createWeatherDataDto.coord.lon,
-		});
+    async loadWeatherDataForCities(cities: string[]): Promise<void> {
+        cities.forEach(async (city) => {
+            await this.loadWeatherDataForCity(city);
+        });
+    }
 
-		const weather = new Weather({
-			id: createWeatherDataDto.weather.id,
-			main: createWeatherDataDto.weather.main,
-			description: createWeatherDataDto.weather.description,
-			icon: createWeatherDataDto.weather.icon,
-		});
+    async createWeather(
+        createWeatherDataDto: CreateWeatherDataDto
+    ): Promise<WeatherDataDto> {
+        const coord = new Coord({
+            lat: createWeatherDataDto.coord.lat,
+            lon: createWeatherDataDto.coord.lon,
+        });
 
-		const main = new Main({
-			temp: createWeatherDataDto.main.temp,
-			feels_like: createWeatherDataDto.main.feels_like,
-			temp_min: createWeatherDataDto.main.temp_min,
-			temp_max: createWeatherDataDto.main.temp_max,
-			pressure: createWeatherDataDto.main.pressure,
-			humidity: createWeatherDataDto.main.humidity,
-			sea_level: createWeatherDataDto.main.sea_level,
-			grnd_level: createWeatherDataDto.main.grnd_level,
-		});
+        const weather = new Weather({
+            id: createWeatherDataDto.weather.id,
+            main: createWeatherDataDto.weather.main,
+            description: createWeatherDataDto.weather.description,
+            icon: createWeatherDataDto.weather.icon,
+        });
 
-		const weatherData = await this.createWeatherDataUseCase.execute(
-			new WeatherData({
-				id: createWeatherDataDto.id,
-				name: createWeatherDataDto.name,
-				timezone: createWeatherDataDto.timezone,
-				cod: createWeatherDataDto.cod,
-				coord,
-				weather,
-				main,
-			})
-		);
-		console.log("🚀 ~ WeatherLoadingService ~ weatherData:", weatherData)
-		return this.mapToWeatherDataDto(weatherData);
-	}
+        const main = new Main({
+            temp: createWeatherDataDto.main.temp,
+            feels_like: createWeatherDataDto.main.feels_like,
+            temp_min: createWeatherDataDto.main.temp_min,
+            temp_max: createWeatherDataDto.main.temp_max,
+            pressure: createWeatherDataDto.main.pressure,
+            humidity: createWeatherDataDto.main.humidity,
+            sea_level: createWeatherDataDto.main.sea_level,
+            grnd_level: createWeatherDataDto.main.grnd_level,
+        });
 
-	private mapToWeatherDataDto(weatherData: WeatherData): WeatherDataDto {
-		return {
-			weatherDataId: weatherData._id,
-			name: weatherData.name,
-			timezone: weatherData.timezone,
-			cod: weatherData.cod,
-			coord: weatherData.coord,
-			main: weatherData.main,
-			weather: weatherData.weather,
-			id: weatherData.id,
-		};
-	}
+        const weatherData = await this.createWeatherDataUseCase.execute(
+            new WeatherData({
+                id: createWeatherDataDto.id,
+                name: createWeatherDataDto.name,
+                timezone: createWeatherDataDto.timezone,
+                cod: createWeatherDataDto.cod,
+                coord,
+                weather,
+                main,
+            })
+        );
+        return this.mapToWeatherDataDto(weatherData);
+    }
+
+    private mapToWeatherDataDto(weatherData: WeatherData): WeatherDataDto {
+        return {
+            weatherDataId: weatherData._id,
+            name: weatherData.name,
+            timezone: weatherData.timezone,
+            cod: weatherData.cod,
+            coord: weatherData.coord,
+            main: weatherData.main,
+            weather: weatherData.weather,
+            id: weatherData.id,
+        };
+    }
 }

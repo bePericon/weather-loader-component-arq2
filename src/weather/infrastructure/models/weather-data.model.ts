@@ -2,8 +2,8 @@ import mongoose, { Schema } from 'mongoose';
 
 const coordSchema = new Schema(
     {
-    lon: { type: Number, required: true },
-    lat: { type: Number, required: true },
+        lon: { type: Number, required: true },
+        lat: { type: Number, required: true },
     },
     { _id: false }
 );
@@ -30,7 +30,7 @@ const mainSchema = new Schema(
         grnd_level: { type: Number, required: true },
     },
     { _id: false }
-)
+);
 
 const weatherDataSchema = new Schema({
     name: { type: String, required: true },
@@ -40,7 +40,7 @@ const weatherDataSchema = new Schema({
     coord: coordSchema,
     weather: weatherSchema,
     main: mainSchema,
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.model('WeatherData', weatherDataSchema);

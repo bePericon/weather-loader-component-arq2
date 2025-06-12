@@ -9,12 +9,11 @@ import customServer from 'express-promise-router';
 import mongoose from 'mongoose';
 import config from './config/config';
 import cookieParser from 'cookie-parser';
-import errorMiddleware from './shared/infraestructure/error.middleware';
-import { TemperatureController } from './temperature/infraestructure/controllers/temperature.controller';
-import { WeatherLoaderCronTask } from './weather/infraestructure/scheduled-tasks/weather-loader-cron.task';
+import errorMiddleware from './shared/infrastructure/error.middleware';
+import { TemperatureController } from './weather/infrastructure/controllers/temperature.controller';
+import { WeatherLoaderCronTask } from './weather/infrastructure/scheduled-tasks/weather-loader-cron.task';
 
 export class ServerApp extends Server {
-  private readonly STARTED_MSG = 'Server running on port: ';
 
   constructor() {
     super(true);
@@ -28,7 +27,7 @@ export class ServerApp extends Server {
       next();
     });
 
-    this.setupScheduledTasks();
+    // this.setupScheduledTasks();
     this.setupControllers();
 
     this.app.use(errorMiddleware);
@@ -61,7 +60,7 @@ export class ServerApp extends Server {
   }
 
   private setupScheduledTasks(): void {
-    const cities: string[] = ['Quilmes', 'Buenos Aires'];
+    const cities: string[] = ['Quilmes'];
 
     const cronJobAdapter = new WeatherLoaderCronTask(cities, config.weatherLoaderCronSchedule as string);
 
@@ -70,12 +69,8 @@ export class ServerApp extends Server {
 
   private async initConnectionDB(): Promise<void> {
     const CONN_STR = config.db_connection_string as string;
-    console.log('🚀 ~ ServerApp ~ initConnectionDB ~ CONN_STR:', CONN_STR);
     const db = await mongoose.connect(CONN_STR);
-    console.log(
-      '🚀 ~ ServerApp ~ initConnectionDB ~ Data base is connect:',
-      db.connection.name
-    );
+    logger.imp(`Data base is connect: ${db.connection.name}`);
   }
 
   public getApp(): Application {
@@ -84,7 +79,7 @@ export class ServerApp extends Server {
 
   public start(port: number) {
     this.app.listen(port, () => {
-      logger.imp(this.STARTED_MSG + port);
+      logger.imp('Server running on port: ' + port);
     });
   }
 }
