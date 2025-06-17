@@ -11,6 +11,7 @@ export interface WeatherDataProps {
     id: number;
     name: string;
     cod: number;
+    createdAt?: Date;
 }
 
 export class WeatherData {
@@ -22,6 +23,7 @@ export class WeatherData {
     public readonly id: number;
     public readonly name: string;
     public readonly cod: number;
+    public readonly createdAt?: Date;
 
     constructor(props: WeatherDataProps) {
         this._id = props._id;
@@ -32,5 +34,6 @@ export class WeatherData {
         this.id = props.id;
         this.name = props.name;
         this.cod = props.cod;
+        this.createdAt = props.createdAt;
     }
 }

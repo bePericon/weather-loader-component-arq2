@@ -1,3 +1,5 @@
+import { Logger } from 'pino';
+import { ServiceUnavailableError } from '../../../shared/domain/value-objects/service-unavailable-error';
 import { WeatherDataClient } from '../../domain/clients/weather-data-client';
 import { WeatherData } from '../../domain/entities/weather-data';
 import { WeatherDataRepository } from '../../domain/repositories/weather-data-repository';
@@ -11,40 +13,51 @@ import { WeatherDataDto } from '../dtos/weather-data-dto';
 import { WeatherDataUseCase } from '../interfaces/weather-data-use-case.interface';
 
 export class WeatherLoadingService implements WeatherDataUseCase {
+    private readonly logName: string = 'WeatherLoadingService';
     private readonly createWeatherDataUseCase: CreateWeatherData;
     private readonly fetchCurrentWeatherUseCase: FetchCurrentWeather;
 
     constructor(
         readonly weatherDataRepository: WeatherDataRepository,
-        readonly weatherDataClient: WeatherDataClient
+        readonly weatherDataClient: WeatherDataClient,
+        readonly logger: Logger
     ) {
         this.createWeatherDataUseCase = new CreateWeatherData(weatherDataRepository);
         this.fetchCurrentWeatherUseCase = new FetchCurrentWeather(weatherDataClient);
     }
 
     async loadWeatherDataForCity(city: string): Promise<WeatherDataDto | null> {
-        const fetched = await this.fetchCurrentWeatherUseCase.execute(city);
+        try {
+            const fetched = await this.fetchCurrentWeatherUseCase.execute(city);
 
-        let weatherDataDto = null;
-        if (fetched) {
-            const createWeatherDataDto: CreateWeatherDataDto = {
-                coord: fetched.coord,
-                weather: fetched.weather[0],
-                main: fetched.main,
-                timezone: fetched.timezone,
-                id: fetched.id,
-                name: fetched.name,
-                cod: fetched.cod,
-            };
-            weatherDataDto = await this.createWeather(createWeatherDataDto);
+            let weatherDataDto = null;
+            if (fetched) {
+                const createWeatherDataDto: CreateWeatherDataDto = {
+                    coord: fetched.coord,
+                    weather: fetched.weather[0],
+                    main: fetched.main,
+                    timezone: fetched.timezone,
+                    id: fetched.id,
+                    name: fetched.name,
+                    cod: fetched.cod,
+                };
+                weatherDataDto = await this.createWeather(createWeatherDataDto);
+            }
+
+            return weatherDataDto;
+        } catch (error) {
+            this.handleError(error, 'loadWeatherDataForCity');
+            return null;
         }
-
-        return weatherDataDto;
     }
 
     async loadWeatherDataForCities(cities: string[]): Promise<void> {
         cities.forEach(async (city) => {
-            await this.loadWeatherDataForCity(city);
+            try {
+                await this.loadWeatherDataForCity(city);
+            } catch (error) {
+                this.handleError(error, 'loadWeatherDataForCities');
+            }
         });
     }
 
@@ -99,5 +112,15 @@ export class WeatherLoadingService implements WeatherDataUseCase {
             weather: weatherData.weather,
             id: weatherData.id,
         };
+    }
+
+    private handleError(catchError: any, method: string) {
+        if (catchError instanceof ServiceUnavailableError) {
+            this.logger.error(
+                `[${this.logName}][${method}] ${catchError.message}`
+            );
+        } else {
+            this.logger.error(`[${this.logName}][${method}] An unexpected error occurred while processing city.`);
+        }
     }
 }

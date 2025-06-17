@@ -3,43 +3,60 @@ import { WeatherDataUseCase } from '../../application/interfaces/weather-data-us
 import { WeatherLoadingService } from '../../application/services/weather-loading-service';
 import { MongoWeatherDataRepository } from '../repositories/mongo-weather-data.repository';
 import { OpenWeatherMapClient } from '../clients/open-weather-map.client';
+import { Logger } from 'pino';
 
 export class WeatherLoaderCronTask {
-  private task: ScheduledTask | null = null;
-  private readonly weatherLoadingService: WeatherDataUseCase;
+    private logName: string = 'WeatherLoaderCronTask';
+    private task: ScheduledTask | null = null;
+    private readonly weatherLoadingService: WeatherDataUseCase;
 
-  constructor(
-    private readonly citiesToLoad: string[],
-    private readonly cronSchedule: string
-  ) {
-    const weatherDataRepository = new MongoWeatherDataRepository();
-    const openWeatherMapClient = new OpenWeatherMapClient();
-    this.weatherLoadingService = new WeatherLoadingService(weatherDataRepository, openWeatherMapClient);
-  }
-
-  public start(): void {
-    this.task = schedule(this.cronSchedule, async () => {
-      console.info('Starting weather data load job run...');
-
-      try {
-        await this.weatherLoadingService.loadWeatherDataForCities(this.citiesToLoad);
-        
-        console.info('Weather data load job finished successfully.');
-      } catch (error) {
-        console.error({ err: error }, 'Weather data load job failed.');
-      }
-
-    }, {
-      timezone: 'America/Argentina/Buenos_Aires', 
-    });
-
-    console.info('Cron job has been started.');
-  }
-
-  public stop(): void {
-    if (this.task) {
-      this.task.stop();
-      console.info('Cron job has been stopped.');
+    constructor(
+        private readonly citiesToLoad: string[],
+        private readonly cronSchedule: string,
+        private readonly logger: Logger
+    ) {
+        const weatherDataRepository = new MongoWeatherDataRepository(logger);
+        const openWeatherMapClient = new OpenWeatherMapClient(logger);
+        this.weatherLoadingService = new WeatherLoadingService(
+            weatherDataRepository,
+            openWeatherMapClient,
+            logger
+        );
     }
-  }
+
+    public start(): void {
+        this.task = schedule(
+            this.cronSchedule,
+            async () => {
+                this.logger.info(
+                    `[${this.logName}] Starting weather data load job run...`
+                );
+
+                // try {
+                await this.weatherLoadingService.loadWeatherDataForCities(
+                    this.citiesToLoad
+                );
+
+                this.logger.info(
+                    `[${this.logName}] Weather data load job finished successfully.`
+                );
+                // } catch (error) {
+                //   logger.warn('Weather data load job failed.')
+                //   logger.err({ err: error });
+                // }
+            },
+            {
+                timezone: 'America/Argentina/Buenos_Aires',
+            }
+        );
+
+        this.logger.info(`[${this.logName}] Cron job has been started.`);
+    }
+
+    public stop(): void {
+        if (this.task) {
+            this.task.stop();
+            this.logger.info(`[${this.logName}] Cron job has been stopped.`);
+        }
+    }
 }
