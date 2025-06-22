@@ -1,0 +1,6 @@
+./db_data
+node_modules
+
+./docker/mongo/db_data
+
+./sonar

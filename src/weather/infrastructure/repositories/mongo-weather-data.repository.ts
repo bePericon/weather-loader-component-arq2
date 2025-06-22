@@ -6,7 +6,7 @@ import { WeatherDataRepository } from '../../domain/repositories/weather-data-re
 import weatherDataModel from '../models/weather-data.model';
 
 export class MongoWeatherDataRepository implements WeatherDataRepository {
-
+    private readonly logName = 'MongoWeatherDataRepository';
     constructor(private readonly logger: Logger){}
 
     async getLastWeekTemperature(city: string): Promise<Temperature[]> {
@@ -18,8 +18,8 @@ export class MongoWeatherDataRepository implements WeatherDataRepository {
         startOfWeek.setDate(now.getDate() - daysToSubtract);
         startOfWeek.setHours(0, 0, 0, 0);
 
-        console.log(`Buscando datos desde: ${startOfWeek.toISOString()}`);
-        console.log(`Buscando datos hasta:  ${now.toISOString()}`);
+        this.logger.info(`[${this.logName}] Searching weather data from: ${startOfWeek.toISOString()}`);
+        this.logger.info(`[${this.logName}] Searching weather data to:  ${now.toISOString()}`);
 
         const results = await weatherDataModel
             .find({
@@ -31,7 +31,7 @@ export class MongoWeatherDataRepository implements WeatherDataRepository {
             })
             .sort({ createdAt: 'asc' });
 
-        console.log(`Se encontraron ${results.length} registros de ${city}.`);
+        this.logger.info(`[${this.logName}] Found ${results.length} registers for the last week: ${city}`);
 
         return results.map((t) => this.mapToTemperature(t as unknown as WeatherData));
     }
@@ -41,8 +41,8 @@ export class MongoWeatherDataRepository implements WeatherDataRepository {
         const startOfToday = new Date(now);
         startOfToday.setHours(0, 0, 0, 0);
 
-        console.log(`Buscando datos desde: ${startOfToday.toISOString()}`);
-        console.log(`Buscando datos hasta:  ${now.toISOString()}`);
+        this.logger.info(`[${this.logName}] Searching weather data from: ${startOfToday.toISOString()}`);
+        this.logger.info(`[${this.logName}] Searching weather data to:   ${now.toISOString()}`);
 
         const results = await weatherDataModel
             .find({
@@ -54,9 +54,8 @@ export class MongoWeatherDataRepository implements WeatherDataRepository {
             })
             .sort({ createdAt: 'desc' }); // Opcional: ordenar del más reciente al más antiguo
 
-        console.log(
-            `Se encontraron ${results.length} registros para el día de hoy de ${city}`
-        );
+        this.logger.info(`[${this.logName}] Found ${results.length} registers for the last day: ${city}`);
+
         return results.map((t) => this.mapToTemperature(t as unknown as WeatherData));
     }
 

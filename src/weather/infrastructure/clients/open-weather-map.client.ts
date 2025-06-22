@@ -3,7 +3,7 @@ import { WeatherDataClient } from '../../domain/clients/weather-data-client';
 import { ExternalCurrentWeatherData } from '../../domain/entities/external-current-weather-data';
 import config from '../../../config/config';
 import CircuitBreaker from 'opossum';
-import { ServiceUnavailableError } from '../../../shared/domain/value-objects/service-unavailable-error';
+// import { ServiceUnavailableError } from '../../../shared/domain/value-objects/service-unavailable-error';
 import { Logger } from 'pino';
 
 export class OpenWeatherMapClient implements WeatherDataClient {
@@ -23,10 +23,13 @@ export class OpenWeatherMapClient implements WeatherDataClient {
         );
 
         this.circuitBreaker.fallback(() => {
-            throw new ServiceUnavailableError(
+            // throw new ServiceUnavailableError(
+            //     `[${this.logName}] OpenWeatherMap API is currently unavailable (Circuit Breaker is OPEN)`
+            // );
+            this.logger.error(
                 `[${this.logName}] OpenWeatherMap API is currently unavailable (Circuit Breaker is OPEN)`
             );
-            // return;
+            return;
         });
 
         this.addEventListeners();
@@ -64,6 +67,7 @@ export class OpenWeatherMapClient implements WeatherDataClient {
         );
         this.circuitBreaker.on('failure', (error) =>
             this.logger.error(
+                { error: error },
                 `[${this.logName}] Circuit Breaker recorded a failure for ${serviceName}: ${error}`
             )
         );

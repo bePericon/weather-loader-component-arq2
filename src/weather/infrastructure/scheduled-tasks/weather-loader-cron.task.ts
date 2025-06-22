@@ -32,7 +32,6 @@ export class WeatherLoaderCronTask {
                     `[${this.logName}] Starting weather data load job run...`
                 );
 
-                // try {
                 await this.weatherLoadingService.loadWeatherDataForCities(
                     this.citiesToLoad
                 );
@@ -40,10 +39,6 @@ export class WeatherLoaderCronTask {
                 this.logger.info(
                     `[${this.logName}] Weather data load job finished successfully.`
                 );
-                // } catch (error) {
-                //   logger.warn('Weather data load job failed.')
-                //   logger.err({ err: error });
-                // }
             },
             {
                 timezone: 'America/Argentina/Buenos_Aires',
