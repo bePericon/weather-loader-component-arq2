@@ -15,7 +15,10 @@ export class TemperatureController {
 
     constructor(private readonly logger: Logger) {
         const mongoWeatherDataRepository = new MongoWeatherDataRepository(logger);
-        this.temperatureService = new TemperatureService(mongoWeatherDataRepository, logger);
+        this.temperatureService = new TemperatureService(
+            mongoWeatherDataRepository,
+            logger
+        );
 
         const openWeatherMapClient = new OpenWeatherMapClient(logger);
         this.weatherLoadingService = new WeatherLoadingService(
@@ -27,46 +30,108 @@ export class TemperatureController {
 
     @Get('last-day')
     async GetLastDayTemperature(req: Request, res: Response): Promise<Response> {
-        const lastDayTemperature = await this.temperatureService.getLastDayTemperature(
-            req?.query?.city as string
-        );
+        const start = Date.now();
+        try {
+            req.metrics.requestCounter.inc({
+                method: req.method,
+                status_code: res.statusCode,
+            });
+            this.logger.info(`BEGIN: [TemperatureController.GetLastDayTemperature]`);
 
-        return res
-            .status(StatusCodes.OK)
-            .json(new ApiResponse(`Temperaturas del ultimo dia encontradas`, StatusCodes.OK, lastDayTemperature));
+            const lastDayTemperature =
+                await this.temperatureService.getLastDayTemperature(
+                    req?.query?.city as string
+                );
+
+            return res
+                .status(StatusCodes.OK)
+                .json(
+                    new ApiResponse(
+                        `Temperaturas del ultimo dia encontradas`,
+                        StatusCodes.OK,
+                        lastDayTemperature
+                    )
+                );
+        } finally {
+            const responseTimeInMs = Date.now() - start;
+            req.metrics.httpRequestTimer
+                .labels(req.method, req.route.path, res.statusCode.toString())
+                .observe(responseTimeInMs);
+            this.logger.info(`END: [TemperatureController.GetLastDayTemperature]`);
+        }
     }
 
     @Get('last-week')
     async GetLastWeekTemperature(req: Request, res: Response): Promise<Response> {
-        const lastWeekTemperature = await this.temperatureService.getLastWeekTemperature(
-            req?.query?.city as string
-        );
+        const start = Date.now();
+        try {
+            req.metrics.requestCounter.inc({
+                method: req.method,
+                status_code: res.statusCode,
+            });
+            this.logger.info(`BEGIN: [TemperatureController.GetLastWeekTemperature]`);
 
-        return res
-            .status(StatusCodes.OK)
-            .json(new ApiResponse(`Temperaturas de la ultima semana encontradas`, StatusCodes.OK, lastWeekTemperature));
+            const lastWeekTemperature =
+                await this.temperatureService.getLastWeekTemperature(
+                    req?.query?.city as string
+                );
+
+            return res
+                .status(StatusCodes.OK)
+                .json(
+                    new ApiResponse(
+                        `Temperaturas de la ultima semana encontradas`,
+                        StatusCodes.OK,
+                        lastWeekTemperature
+                    )
+                );
+        } finally {
+            const responseTimeInMs = Date.now() - start;
+            req.metrics.httpRequestTimer
+                .labels(req.method, req.route.path, res.statusCode.toString())
+                .observe(responseTimeInMs);
+            this.logger.info(`END: [TemperatureController.GetLastWeekTemperature]`);
+        }
     }
 
     @Get('')
     async GetCurrentTemperature(req: Request, res: Response): Promise<Response> {
-        const currentTemp = await this.temperatureService.getCurrentTemperature(
-            req?.query?.city as string
-        );
+        const start = Date.now();
+        try {
+            req.metrics.requestCounter.inc({
+                method: req.method,
+                status_code: res.statusCode,
+            });
+            this.logger.info(`BEGIN: [TemperatureController.GetCurrentTemperature]`);
 
-        let response = null;
-        if (!currentTemp) {
-            const loaded = await this.weatherLoadingService.loadWeatherDataForCity(
-                req.query.city as string
+            const currentTemp = await this.temperatureService.getCurrentTemperature(
+                req?.query?.city as string
             );
 
-            // TODO: add redis
-            if (loaded)
-                response =
-                    this.temperatureService.mapToTemperatureDtoFromWeatherData(loaded);
-        } else response = currentTemp;
+            let response = null;
+            if (!currentTemp) {
+                const loaded = await this.weatherLoadingService.loadWeatherDataForCity(
+                    req.query.city as string
+                );
 
-        return res
-            .status(StatusCodes.OK)
-            .json(new ApiResponse(`Temperatura encontrada`, StatusCodes.OK, response));
+                if (loaded)
+                    response =
+                        this.temperatureService.mapToTemperatureDtoFromWeatherData(
+                            loaded
+                        );
+            } else response = currentTemp;
+
+            return res
+                .status(StatusCodes.OK)
+                .json(
+                    new ApiResponse(`Temperatura encontrada`, StatusCodes.OK, response)
+                );
+        } finally {
+            const responseTimeInMs = Date.now() - start;
+            req.metrics.httpRequestTimer
+                .labels(req.method, req.route.path, res.statusCode.toString())
+                .observe(responseTimeInMs);
+            this.logger.info(`END: [TemperatureController.GetCurrentTemperature]`);
+        }
     }
 }

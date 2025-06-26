@@ -17,6 +17,9 @@ services:
     volumes:
       - .:/opt/app
       - /opt/app/node_modules
+    labels:
+      - "logging=promtail"
+      - "app=wlc"
     networks:
       - wlc-network
 
