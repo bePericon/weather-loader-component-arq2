@@ -21,7 +21,7 @@ services:
       - wlc-network
 
   mongo:
-    image: mongo:latest
+    image: mongo
     container_name: mongo
     restart: always
     ports:
@@ -33,7 +33,7 @@ services:
       - wlc-network
 
   mongo-express:
-    image: 'mongo-express:latest'
+    image: mongo-express
     container_name: mongo-express-wlc
     depends_on:
       - mongo
