@@ -28,3 +28,22 @@ Using this technologies:
 - Mongo client web: http://localhost:8081
   - User: admin
   - Password: pass
+
+### Grafana
+
+- Go to folder **docker/grafana** then run ```docker compose up -d grafana --force-recreate``` to up docker container
+
+- You can to access on: http://localhost:4000
+
+### Prometheus
+
+- Go to folder **docker/prometheus** then run ```docker compose up -d prometheus --force-recreate``` to up docker container
+
+- You can to access on: http://localhost:9090
+
+### Loki
+
+- Go to folder **docker/loki** then run ```docker compose up -d loki --force-recreate``` to up docker container
+
+
+Enjoy , thanks!
