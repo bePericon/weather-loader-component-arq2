@@ -52,21 +52,24 @@ export class ServerApp extends Server {
         const status = tokens.status(req, res);
         const statusInfo = ['200', '201'];
 
-        return JSON.stringify({
-            date: tokens.date(req, res, 'iso'),
-            method: tokens.method(req, res),
-            url: tokens.url(req, res),
-            status: status,
-            response: `${tokens['response-time'](req, res)} ms`,
-            level: statusInfo.includes(status as string) ? 'INFO' : 'WARN',
-        });
+        const url = tokens.url(req, res);
+        if (url !== '/metrics') {
+            return JSON.stringify({
+                date: tokens.date(req, res, 'iso'),
+                method: tokens.method(req, res),
+                url: tokens.url(req, res),
+                status: status,
+                response: `${tokens['response-time'](req, res)} ms`,
+                level: statusInfo.includes(status as string) ? 'INFO' : 'WARN',
+            });
+        }
     }
 
     private setupMetrics(): void {
         // Create a Registry to register the metrics
         const register = new promClient.Registry();
         register.setDefaultLabels({
-            app: 'apc-backend',
+            app: 'wlc-app',
         });
         promClient.collectDefaultMetrics({ register });
 

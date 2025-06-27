@@ -8,8 +8,6 @@ export default class MetricsController {
 
     @Get('')
     private async metrics(req: Request, res: Response) {
-        this.logger.info(req.body, true);
-
         res.setHeader('Content-Type', req.metrics.register.contentType);
         res.send(await req.metrics.register.metrics());
     }

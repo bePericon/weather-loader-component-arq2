@@ -1,34 +1,20 @@
 version: '3.8'
 
 services:
-  loki:
-    image: grafana/loki:3.0.0
-    container_name: loki
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - wlc-external
-      - grafana-external
-
-  promtail:
-    image: grafana/promtail:3.0.0
-    container_name: promtail
-    volumes:
-      - ./promtail-config.yml:/etc/promtail/config.yml
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      - loki
-    networks:
-      - wlc-external
-      - grafana-external
-      # Crea etiquetas en Loki a partir de las etiquetas del contenedor
+    loki:
+        image: grafana/loki:3.0.0
+        container_name: loki
+        ports:
+            - '3100:3100'
+        command: -config.file=/etc/loki/local-config.yaml
+        networks:
+            - wlc-external
+            - grafana-external
 
 networks:
-  grafana-external:
-    name: grafana_grafana
-    external: true
-  wlc-external:
-    name: wlc-app_wlc-network
-    external: true
+    grafana-external:
+        name: grafana_grafana
+        external: true
+    wlc-external:
+        name: wlc-app_wlc-network
+        external: true
