@@ -1,45 +1,64 @@
 version: '3.1'
 
 networks:
-  wlc-network:
+    wlc-network:
 
 services:
-  app:
-    image: wlc-app
-    container_name: wlc
-    build:
-      context: .
-      dockerfile: Dockerfile
-    depends_on:
-      - mongo
-    ports:
-      - '8080:8080'
-    volumes:
-      - .:/opt/app
-      - /opt/app/node_modules
-    networks:
-      - wlc-network
+    app:
+        container_name: wlc
+        build:
+            context: .
+            dockerfile: Dockerfile
+        depends_on:
+            - mongo
+        ports:
+            - '8080:8080'
+        volumes:
+            - .:/opt/app
+            - /opt/app/node_modules
+        labels:
+            logging: promtail
+            app: wlc
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '10m'
+                max-file: '3'
+        networks:
+            - wlc-network
 
-  mongo:
-    image: mongo
-    container_name: mongo
-    restart: always
-    ports:
-      - '27017:27017'
-    volumes:
-      - ./db_data/:/data/db
-      - /etc/timezone:/etc/timezone:ro
-    networks:
-      - wlc-network
+    mongo:
+        image: mongo
+        container_name: mongo
+        restart: always
+        ports:
+            - '27017:27017'
+        volumes:
+            - ./db_data/:/data/db
+            - /etc/timezone:/etc/timezone:ro
+        networks:
+            - wlc-network
 
-  mongo-express:
-    image: mongo-express
-    container_name: mongo-express-wlc
-    depends_on:
-      - mongo
-    ports:
-      - '8081:8081'
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-    networks:
-      - wlc-network
+    mongo-express:
+        image: mongo-express
+        container_name: mongo-express-wlc
+        depends_on:
+            - mongo
+        ports:
+            - '8081:8081'
+        environment:
+            ME_CONFIG_MONGODB_SERVER: mongo
+        networks:
+            - wlc-network
+
+    promtail:
+        image: grafana/promtail:2.9.0
+        container_name: promtail
+        volumes:
+            - /var/lib/docker/containers:/var/lib/docker/containers:ro
+            - /var/log:/var/log
+            - ./promtail-config.yml:/etc/promtail/config.yml
+            - /var/run/docker.sock:/var/run/docker.sock
+        command: -config.file=/etc/promtail/config.yml
+        networks:
+            - wlc-network

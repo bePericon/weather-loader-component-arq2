@@ -12,6 +12,14 @@ import errorMiddleware from './shared/infrastructure/error.middleware';
 import { TemperatureController } from './weather/infrastructure/controllers/temperature.controller';
 import { WeatherLoaderCronTask } from './weather/infrastructure/scheduled-tasks/weather-loader-cron.task';
 import logger from './config/logger';
+import promClient from 'prom-client';
+import MetricsController from './weather/infrastructure/controllers/metrics.controller';
+
+declare module 'express-serve-static-core' {
+    interface Request {
+        metrics?: any;
+    }
+}
 
 export class ServerApp extends Server {
     constructor() {
@@ -25,6 +33,8 @@ export class ServerApp extends Server {
             res.header('Access-Control-Allow-Credentials', 'true');
             next();
         });
+
+        this.setupMetrics();
 
         this.setupScheduledTasks();
         this.setupControllers();
@@ -42,20 +52,53 @@ export class ServerApp extends Server {
         const status = tokens.status(req, res);
         const statusInfo = ['200', '201'];
 
-        return JSON.stringify({
-            date: tokens.date(req, res, 'iso'),
-            method: tokens.method(req, res),
-            url: tokens.url(req, res),
-            status: status,
-            response: `${tokens['response-time'](req, res)} ms`,
-            level: statusInfo.includes(status as string) ? 'INFO' : 'WARN',
+        const url = tokens.url(req, res);
+        if (url !== '/metrics') {
+            return JSON.stringify({
+                date: tokens.date(req, res, 'iso'),
+                method: tokens.method(req, res),
+                url: tokens.url(req, res),
+                status: status,
+                response: `${tokens['response-time'](req, res)} ms`,
+                level: statusInfo.includes(status as string) ? 'INFO' : 'WARN',
+            });
+        }
+    }
+
+    private setupMetrics(): void {
+        // Create a Registry to register the metrics
+        const register = new promClient.Registry();
+        register.setDefaultLabels({
+            app: 'wlc-app',
+        });
+        promClient.collectDefaultMetrics({ register });
+
+        const httpRequestTimer = new promClient.Histogram({
+            name: 'http_request_duration_ms',
+            help: 'Duration of HTTP requests in ms',
+            labelNames: ['method', 'route', 'code'],
+            // buckets for response time from 0.1ms to 1s
+            buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500, 1000],
+        });
+        const requestCounter = new promClient.Counter({
+            name: 'http_requests_total',
+            help: 'Total number of HTTP requests',
+            labelNames: ['method', 'status_code'],
+        });
+
+        register.registerMetric(httpRequestTimer);
+        register.registerMetric(requestCounter);
+
+        this.app.use((req, res, next) => {
+            req.metrics = { register, httpRequestTimer, requestCounter };
+            next();
         });
     }
 
     private setupControllers(): void {
         const temperatureController = new TemperatureController(logger);
-
-        super.addControllers([temperatureController], customServer);
+        const metricsController = new MetricsController(logger);
+        super.addControllers([temperatureController, metricsController], customServer);
     }
 
     private setupScheduledTasks(): void {
