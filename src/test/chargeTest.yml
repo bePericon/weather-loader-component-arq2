@@ -1,0 +1,25 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+    - duration: 60
+      arrivalRate: 10
+    - duration: 60
+      arrivalRate: 20
+
+scenarios:
+  - name: Get current temperature
+    flow:
+      - get:
+          url: "/api/temperature?city=Quilmes"
+
+  - name: Get last day temperature
+    flow:
+      - get:
+          url: "/api/temperature/last-day?city=Quilmes"
+
+  - name: Get last week temperature
+    flow:
+      - get:
+          url: "/api/temperature/last-week?city=Quilmes"
