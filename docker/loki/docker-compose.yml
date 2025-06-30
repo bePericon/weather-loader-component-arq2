@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+    loki:
+        image: grafana/loki:3.0.0
+        container_name: loki
+        ports:
+            - '3100:3100'
+        command: -config.file=/etc/loki/local-config.yaml
+        networks:
+            - wlc-external
+            - grafana-external
+
+networks:
+    grafana-external:
+        name: grafana_grafana
+        external: true
+    wlc-external:
+        name: wlc-app_wlc-network
+        external: true

@@ -1,9 +1,9 @@
 #Base image: nodejs - version: 
-FROM node:18.20-alpine
+FROM node:24-alpine3.21
 
 #Metadata
 LABEL "cl.apgca.appNode"="WeatherLoaderComponent"
-LABEL version="0.1"
+LABEL version="1.0"
 
 #Setting enviroment variables
 ENV HOME=/opt/app 
@@ -26,7 +26,7 @@ COPY jest.setup.js $HOME
 # COPY sonar-project.properties $HOME
 COPY src/ $HOME/src
 COPY tsconfig.json $HOME
-# COPY .env.production $HOME/.env
+COPY .env $HOME/.env
 
 RUN chown -R daemon $HOME
 USER daemon

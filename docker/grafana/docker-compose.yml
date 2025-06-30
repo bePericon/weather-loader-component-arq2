@@ -1,0 +1,20 @@
+version: '3.4'
+
+networks:
+  grafana:
+
+services:
+  grafana:
+      image: grafana/grafana:11.0.0
+      container_name: grafana
+      ports:
+        - "4000:3000"
+      volumes:
+        - grafana-storage:/var/lib/grafana
+        - ./dashboards:/etc/grafana/provisioning/dashboards
+        # - ./datasources:/etc/grafana/provisioning/datasources
+      networks:
+        - grafana
+
+volumes:
+  grafana-storage: {}
