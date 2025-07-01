@@ -2,6 +2,9 @@ global:
   scrape_interval: 15s
   
 scrape_configs:
-  - job_name: 'backend-prod'
+  - job_name: 'weather-loader-component'
     static_configs:
       - targets: ['host.docker.internal:8080']
+  - job_name: 'weather-metrics-component'
+    static_configs:
+      - targets: ['host.docker.internal:8082']

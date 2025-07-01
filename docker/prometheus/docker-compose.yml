@@ -14,6 +14,8 @@ services:
     networks:
       - grafana-external
       - wlc-external
+      - wmc-external
+
 
 networks:
   grafana-external:
@@ -21,4 +23,7 @@ networks:
     external: true
   wlc-external:
     name: wlc-app_wlc-network
+    external: true
+  wmc-external:
+    name: weather-metrics-component-arq2_wmc-network
     external: true
