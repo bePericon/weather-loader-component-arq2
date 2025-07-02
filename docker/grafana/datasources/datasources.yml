@@ -1,0 +1,28 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://host.docker.internal:9090
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: true # Hacemos a Tempo el default para la vista Explore
+    jsonData:
+      # --- LA INTEGRACIÓN MÁGICA ---
+      tracesToLogs:
+        datasourceUid: Loki # Le decimos que busque logs en nuestra fuente de datos Loki
+        tags: [ 'service.name', 'job' ]
+        spanStartTimeShift: '1h'
+        spanEndTimeShift: '1h'
+        filterByTraceID: true
+        filterBySpanID: false

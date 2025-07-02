@@ -25,5 +25,5 @@ networks:
     name: wlc-app_wlc-network
     external: true
   wmc-external:
-    name: weather-metrics-component-arq2_wmc-network
+    name: wmc-app_wmc-network
     external: true
